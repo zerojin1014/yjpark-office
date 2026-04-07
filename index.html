@@ -163,7 +163,7 @@ table.grid th, table.grid td {
 .sb-right { margin-left:auto; display:flex; gap:12px; }
 .zoom-slider { width:60px; height:3px; accent-color:#fff; cursor:pointer; }
 
-.hidden-input { position:absolute; opacity:0; pointer-events:none; width:1px; height:1px; }
+.hidden-input { position:absolute; opacity:0; pointer-events:none; left:-9999px; width:100px; }
 </style>
 </head>
 <body>
@@ -804,8 +804,8 @@ function demoMode() {
   addChatRow('AI','첫 단어: '+fw);
 }
 
-const _origSubmit=submitWord;
-async function submitWord(){
+const _origSubmit = submitWord;
+submitWord = async function() {
   if(db){await _origSubmit();return;}
   if(!gameState||gameState.turn!=='p1'){flashErr('내 차례가 아닙니다');return;}
   const word=vals.word.trim();
