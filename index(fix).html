@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2025_Q2_업무보고_최종_진짜최종_v3.xlsx - Microsoft Excel</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+body {
+  font-family: 'Noto Sans KR', 'Malgun Gothic', '맑은 고딕', sans-serif;
+  font-size: 12px;
+  background: #f0f0f0;
+  color: #000;
+  overflow: hidden;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── TITLE BAR ── */
+.title-bar {
+  height: 22px;
+  background: #217346;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.title-bar-text { color:#fff; font-size:11px; flex:1; text-align:center; }
+.win-btn { width:13px; height:13px; border-radius:50%; cursor:pointer; flex-shrink:0; }
+.win-btn.close { background:#ff5f57; }
+.win-btn.min { background:#febc2e; }
+.win-btn.max { background:#28c840; }
+
+/* ── RIBBON ── */
+.ribbon { background:#217346; flex-shrink:0; }
+.ribbon-tabs { display:flex; padding:0 4px; }
+.ribbon-tab {
+  padding:4px 10px; color:#fff; font-size:11px; cursor:pointer;
+  border-radius:3px 3px 0 0; opacity:0.85;
+}
+.ribbon-tab:hover { opacity:1; background:rgba(255,255,255,0.15); }
+.ribbon-tab.active { background:#fff; color:#217346; opacity:1; font-weight:600; }
+.ribbon-content {
+  background:#fff; border-bottom:1px solid #c8c8c8;
+  padding:4px 8px; display:flex; align-items:center; gap:2px;
+  min-height:62px; flex-wrap:wrap;
+}
+.ribbon-group {
+  display:flex; flex-direction:column; align-items:center;
+  padding:2px 8px; border-right:1px solid #e0e0e0; gap:2px; min-width:60px;
+}
+.ribbon-group:last-child { border-right:none; }
+.ribbon-group-label { font-size:9px; color:#666; margin-top:auto; padding-top:2px; }
+.ribbon-btn-row { display:flex; gap:2px; align-items:center; }
+.rbtn {
+  padding:2px 6px; background:transparent; border:1px solid transparent;
+  border-radius:2px; font-size:11px; cursor:pointer; color:#333; font-family:inherit; white-space:nowrap;
+}
+.rbtn:hover { background:#e8e8e8; border-color:#c0c0c0; }
+.rbtn.big { display:flex; flex-direction:column; align-items:center; padding:2px 8px; font-size:10px; gap:1px; }
+.rbtn.big .ico { font-size:18px; line-height:1; }
+.rbtn-sep { width:1px; height:24px; background:#ddd; margin:0 2px; }
+.font-ctrl { display:flex; flex-direction:column; gap:2px; }
+.font-row { display:flex; align-items:center; gap:3px; }
+.font-select { width:90px; height:18px; font-size:11px; border:1px solid #c0c0c0; border-radius:2px; padding:0 3px; font-family:inherit; }
+.font-size-input { width:32px; height:18px; font-size:11px; border:1px solid #c0c0c0; border-radius:2px; padding:0 3px; text-align:center; font-family:inherit; }
+
+/* ── FORMULA BAR ── */
+.formula-bar {
+  display:flex; align-items:center; height:24px;
+  background:#fff; border-bottom:1px solid #bbb; flex-shrink:0;
+}
+.cell-ref {
+  width:62px; border-right:1px solid #bbb; padding:0 6px;
+  font-size:11px; height:100%; display:flex; align-items:center;
+  flex-shrink:0; font-family:'Calibri',sans-serif;
+}
+.formula-icons {
+  display:flex; align-items:center; padding:0 4px; gap:2px;
+  border-right:1px solid #bbb; height:100%;
+}
+.formula-icon { font-size:12px; color:#555; cursor:pointer; padding:0 3px; }
+.formula-input {
+  flex:1; border:none; outline:none; padding:0 6px; font-size:12px; height:100%;
+  font-family:'Calibri','Noto Sans KR',sans-serif; color:#000; background:transparent;
+}
+
+/* ── SHEET SCROLL ── */
+.sheet-wrapper { flex:1; overflow:hidden; display:flex; flex-direction:column; }
+.sheet-scroll { flex:1; overflow:auto; }
+.sheet-scroll::-webkit-scrollbar { width:14px; height:14px; }
+.sheet-scroll::-webkit-scrollbar-track { background:#f5f5f5; border:1px solid #e0e0e0; }
+.sheet-scroll::-webkit-scrollbar-thumb { background:#c0c0c0; border:2px solid #f5f5f5; border-radius:2px; }
+
+/* ── GRID ── */
+table.grid { border-collapse:collapse; table-layout:fixed; }
+table.grid th, table.grid td {
+  border-right:1px solid #d0d0d0; border-bottom:1px solid #d0d0d0;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  height:20px; padding:0 4px; font-size:11px;
+  font-family:'Calibri','Noto Sans KR',sans-serif;
+}
+.col-header {
+  background:#f2f2f2; color:#333; text-align:center; font-weight:400; font-size:11px;
+  position:sticky; top:0; z-index:5; border-bottom:1px solid #bbb; border-top:1px solid #e0e0e0;
+}
+.row-header {
+  background:#f2f2f2; color:#333; text-align:right; padding-right:6px; font-weight:400;
+  width:42px; min-width:42px; position:sticky; left:0; z-index:4; border-right:1px solid #bbb;
+}
+.corner-th {
+  background:#f2f2f2; position:sticky; top:0; left:0; z-index:6;
+  border-right:1px solid #bbb; border-bottom:1px solid #bbb;
+  width:42px; min-width:42px; height:20px;
+}
+.cell { background:#fff; cursor:cell; }
+.cell:hover { background:#f5f5f5; }
+.cell.selected { background:#e6f2ea; outline:2px solid #217346; outline-offset:-1px; z-index:2; }
+
+/* cell types */
+.c-header { background:#217346 !important; color:#fff !important; font-weight:600 !important; }
+.c-section { background:#E2EFDA !important; color:#1d6832 !important; font-weight:600 !important; }
+.c-green { background:#C6EFCE !important; color:#276221 !important; }
+.c-yellow { background:#FFEB9C !important; color:#9C5700 !important; }
+.c-red { background:#FFC7CE !important; color:#9C0006 !important; }
+.c-blue { background:#DDEBF7 !important; color:#1F497D !important; }
+.c-num { text-align:right; }
+.c-formula { color:#1F497D; }
+.c-bold { font-weight:600 !important; }
+.c-big { font-size:14px !important; font-weight:700 !important; }
+.c-click { cursor:pointer !important; }
+.c-input { cursor:text !important; }
+
+/* flash */
+@keyframes errflash { 0%,100%{background:#fff} 50%{background:#FFC7CE} }
+.err-flash { animation:errflash 0.35s; }
+
+/* ── TABS ── */
+.sheet-tabs {
+  height:22px; background:#f0f0f0; border-top:1px solid #bbb;
+  display:flex; align-items:flex-end; padding:0 4px; flex-shrink:0;
+}
+.sheet-tab {
+  padding:2px 12px; font-size:11px; cursor:pointer;
+  border:1px solid #bbb; border-bottom:none; background:#ddd;
+  border-radius:3px 3px 0 0; color:#444; margin-right:2px;
+}
+.sheet-tab.active { background:#fff; color:#000; font-weight:600; }
+.sheet-tab-add { padding:2px 8px; font-size:14px; color:#888; cursor:pointer; }
+
+/* ── STATUS BAR ── */
+.status-bar {
+  height:20px; background:#217346; display:flex; align-items:center;
+  padding:0 10px; gap:16px; flex-shrink:0;
+}
+.sb-item { font-size:11px; color:rgba(255,255,255,0.85); display:flex; align-items:center; gap:4px; }
+.sb-item b { color:#fff; }
+.sb-right { margin-left:auto; display:flex; gap:12px; }
+.zoom-slider { width:60px; height:3px; accent-color:#fff; cursor:pointer; }
+
+.hidden-input { position:absolute; opacity:0; pointer-events:none; left:-9999px; width:100px; }
+</style>
+</head>
+<body>
+
+<!-- TITLE BAR -->
+<div class="title-bar">
+  <div class="win-btn close"></div>
+  <div class="win-btn min"></div>
+  <div class="win-btn max"></div>
+  <div class="title-bar-text">2025_Q2_업무보고_최종_진짜최종_v3.xlsx — Microsoft Excel</div>
+</div>
+
+<!-- RIBBON -->
+<div class="ribbon">
+  <div class="ribbon-tabs">
+    <div class="ribbon-tab">파일</div>
+    <div class="ribbon-tab active">홈</div>
+    <div class="ribbon-tab">삽입</div>
+    <div class="ribbon-tab">페이지 레이아웃</div>
+    <div class="ribbon-tab">수식</div>
+    <div class="ribbon-tab">데이터</div>
+    <div class="ribbon-tab">검토</div>
+    <div class="ribbon-tab">보기</div>
+  </div>
+  <div class="ribbon-content">
+    <div class="ribbon-group">
+      <div class="ribbon-btn-row">
+        <button class="rbtn big"><span class="ico">📋</span>붙여넣기</button>
+        <div style="display:flex;flex-direction:column;gap:1px">
+          <button class="rbtn" style="font-size:11px">✂ 잘라내기</button>
+          <button class="rbtn" style="font-size:11px">📄 복사</button>
+          <button class="rbtn" style="font-size:11px">✏ 서식 복사</button>
+        </div>
+      </div>
+      <div class="ribbon-group-label">클립보드</div>
+    </div>
+    <div class="ribbon-group">
+      <div class="font-ctrl">
+        <div class="font-row">
+          <select class="font-select"><option>맑은 고딕</option><option>굴림</option><option>Calibri</option></select>
+          <input class="font-size-input" type="text" value="11">
+          <button class="rbtn">A↑</button><button class="rbtn">A↓</button>
+        </div>
+        <div class="font-row">
+          <button class="rbtn" style="font-weight:700">B</button>
+          <button class="rbtn" style="font-style:italic">I</button>
+          <button class="rbtn" style="text-decoration:underline">U</button>
+          <div class="rbtn-sep"></div>
+          <button class="rbtn">⊞</button>
+          <button class="rbtn" style="color:#C00000">A</button>
+          <button class="rbtn" style="background:#FFFF00;font-size:10px">형광</button>
+        </div>
+      </div>
+      <div class="ribbon-group-label">글꼴</div>
+    </div>
+    <div class="ribbon-group">
+      <div class="ribbon-btn-row">
+        <div style="display:flex;flex-direction:column;gap:1px">
+          <div class="ribbon-btn-row"><button class="rbtn">⬆</button><button class="rbtn">↕</button><button class="rbtn">⬇</button></div>
+          <div class="ribbon-btn-row"><button class="rbtn">⬅</button><button class="rbtn">☰</button><button class="rbtn">➡</button></div>
+        </div>
+        <div class="rbtn-sep"></div>
+        <div style="display:flex;flex-direction:column;gap:1px">
+          <button class="rbtn" style="font-size:10px">↩ 줄바꿈</button>
+          <button class="rbtn" style="font-size:10px">⊞ 병합</button>
+        </div>
+      </div>
+      <div class="ribbon-group-label">맞춤</div>
+    </div>
+    <div class="ribbon-group">
+      <div style="display:flex;flex-direction:column;gap:2px">
+        <select class="font-select" style="width:110px"><option>일반</option><option>숫자</option><option>통화</option><option>날짜</option><option>텍스트</option></select>
+        <div class="ribbon-btn-row">
+          <button class="rbtn" style="font-size:10px">₩ %</button>
+          <button class="rbtn" style="font-size:10px">,</button>
+          <button class="rbtn" style="font-size:10px">.0→</button>
+          <button class="rbtn" style="font-size:10px">←.0</button>
+        </div>
+      </div>
+      <div class="ribbon-group-label">표시 형식</div>
+    </div>
+    <div class="ribbon-group">
+      <div class="ribbon-btn-row">
+        <button class="rbtn" style="font-size:10px">조건부<br>서식 ▾</button>
+        <button class="rbtn" style="font-size:10px">표 서식<br>▾</button>
+        <button class="rbtn" style="font-size:10px">셀<br>스타일 ▾</button>
+      </div>
+      <div class="ribbon-group-label">스타일</div>
+    </div>
+    <div class="ribbon-group">
+      <div class="ribbon-btn-row">
+        <button class="rbtn big" onclick="cellAct('btn-create')"><span class="ico">➕</span>삽입</button>
+        <button class="rbtn big"><span class="ico">🗑</span>삭제</button>
+        <button class="rbtn big" onclick="cellAct('start-btn')"><span class="ico">⚙</span>서식</button>
+      </div>
+      <div class="ribbon-group-label">셀</div>
+    </div>
+    <div class="ribbon-group">
+      <div class="ribbon-btn-row">
+        <button class="rbtn big" onclick="cellAct('submit-btn')"><span class="ico">Σ</span>자동합계</button>
+        <button class="rbtn big" onclick="cellAct('btn-join')"><span class="ico">↓</span>채우기</button>
+        <button class="rbtn big"><span class="ico">🔍</span>찾기</button>
+      </div>
+      <div class="ribbon-group-label">편집</div>
+    </div>
+  </div>
+</div>
+
+<!-- FORMULA BAR -->
+<div class="formula-bar">
+  <div class="cell-ref" id="cell-ref">D4</div>
+  <div class="formula-icons">
+    <span class="formula-icon">✕</span>
+    <span class="formula-icon">✓</span>
+    <span class="formula-icon" style="color:#217346;font-weight:700">fx</span>
+  </div>
+  <input class="formula-input" id="formula-bar-input" value="" placeholder="셀을 선택하거나 수식을 입력하세요" autocomplete="off">
+</div>
+
+<!-- SHEET -->
+<div class="sheet-wrapper">
+  <div class="sheet-scroll">
+    <table class="grid" id="grid"></table>
+  </div>
+</div>
+
+<!-- SHEET TABS -->
+<div class="sheet-tabs">
+  <div class="sheet-tab active">끝말잇기_현황</div>
+  <div class="sheet-tab">Sheet2</div>
+  <div class="sheet-tab">Sheet3</div>
+  <div class="sheet-tab-add">+</div>
+</div>
+
+<!-- STATUS BAR -->
+<div class="status-bar">
+  <div class="sb-item">준비</div>
+  <div class="sb-item" id="sb-mode">셀 모드: 준비</div>
+  <div class="sb-right">
+    <div class="sb-item">개수: <b id="sb-cnt">0</b></div>
+    <div class="sb-item">합계: <b id="sb-sum">0</b></div>
+    <div class="sb-item">🔲 🔲 🔲</div>
+    <div class="sb-item">
+      <span>–</span>
+      <input type="range" class="zoom-slider" min="60" max="200" value="100">
+      <span>+</span>
+      <span><b>100%</b></span>
+    </div>
+  </div>
+</div>
+
+<input type="text" class="hidden-input" id="real-input" maxlength="20" autocomplete="off">
+
+<script>
+// ════════════════════════════════════
+//  FIREBASE CONFIG — 본인 값으로 교체
+// ════════════════════════════════════
+const firebaseConfig = {
+  apiKey: "AIzaSyAC0gqu8SiurJdRgfYl6ZIIEtaN2Q2Z2lU",
+  authDomain: "yjproject-77e2a.firebaseapp.com",
+  databaseURL: "https://yjproject-77e2a-default-rtdb.firebaseio.com",
+  projectId: "yjproject-77e2a",
+  storageBucket: "yjproject-77e2a.firebasestorage.app",
+  messagingSenderId: "47805671519",
+  appId: "1:47805671519:web:6d6c8e6d59c3ec1d7f13ea"
+};
+
+let db, roomRef, myId, myNickname, roomCode, isHost, playerKey;
+let gameState = null, timerInterval = null;
+const TIME_LIMIT = 30;
+
+try { firebase.initializeApp(firebaseConfig); db = firebase.database(); } catch(e) { db = null; }
+myId = 'u_' + Math.random().toString(36).substr(2,8);
+
+// ════════════════════════════════════
+//  GRID DEFINITION
+//  col indices: A=1 B=2 ... L=12
+//  rows 1~45
+// ════════════════════════════════════
+const COLS = ['','A','B','C','D','E','F','G','H','I','J','K','L'];
+const COL_W = [42, 72, 90, 110, 90, 80, 100, 78, 92, 82, 88, 90, 90];
+const NROWS = 45;
+
+// cell defs: key -> { v, cls, id, click, edit }
+const DEF = {
+  // ── ROW 1: 보고서 헤더 ──
+  B1:{v:'부서',cls:'c-header'},C1:{v:'항목',cls:'c-header'},D1:{v:'1월',cls:'c-header c-num'},
+  E1:{v:'2월',cls:'c-header c-num'},F1:{v:'3월',cls:'c-header c-num'},G1:{v:'Q1합계',cls:'c-header c-num'},
+  H1:{v:'목표',cls:'c-header c-num'},I1:{v:'달성률',cls:'c-header c-num'},J1:{v:'상태',cls:'c-header'},
+  K1:{v:'담당자',cls:'c-header'},L1:{v:'비고',cls:'c-header'},
+
+  // ── ROW 2~3: 영업팀 데이터 ──
+  B2:{v:'영업팀',cls:'c-section'},C2:{v:'매출액 (백만원)'},
+  D2:{v:'1,240',cls:'c-num'},E2:{v:'1,380',cls:'c-num'},F2:{v:'1,520',cls:'c-num'},
+  G2:{v:'4,140',cls:'c-num c-formula'},H2:{v:'4,000',cls:'c-num'},
+  I2:{v:'103.5%',cls:'c-num c-green'},J2:{v:'✓ 달성',cls:'c-green'},K2:{v:'김영업'},L2:{v:''},
+
+  B3:{v:'영업팀'},C3:{v:'신규계약 (건)'},
+  D3:{v:'18',cls:'c-num'},E3:{v:'22',cls:'c-num'},F3:{v:'19',cls:'c-num'},
+  G3:{v:'59',cls:'c-num c-formula'},H3:{v:'60',cls:'c-num'},
+  I3:{v:'98.3%',cls:'c-num c-yellow'},J3:{v:'△ 미달',cls:'c-yellow'},K3:{v:'박대리'},L3:{v:'3월 하락'},
+
+  // ── ROW 4: 게임 설정 패널 (위장: 마케팅팀 현황) ──
+  B4:{v:'마케팅팀',cls:'c-section'},C4:{v:'[닉네임]',cls:'c-section'},
+  D4:{v:'',id:'inp-nick',cls:'c-input',edit:'nick'},
+  E4:{v:'[방코드]',cls:'c-section'},
+  F4:{v:'',id:'inp-code',cls:'c-input',edit:'code'},
+  G4:{v:'방 만들기',id:'btn-create',cls:'c-yellow c-click c-bold',click:'create'},
+  H4:{v:'참가하기',id:'btn-join',cls:'c-blue c-click c-bold',click:'join'},
+  I4:{v:'대기중',id:'cell-status',cls:'c-yellow'},
+  J4:{v:'',id:'cell-roomshow'},
+  K4:{v:'',id:'cell-timer',cls:'c-green'},
+  L4:{v:'',id:'cell-timerbar'},
+
+  // ── ROW 5: 플레이어 현황 ──
+  B5:{v:'마케팅팀'},C5:{v:'P1 참가자'},
+  D5:{v:'(대기)',id:'p1-name',cls:'c-yellow'},
+  E5:{v:'P2 참가자'},
+  F5:{v:'(대기)',id:'p2-name',cls:'c-yellow'},
+  G5:{v:'P1 단어수',cls:'c-section'},H5:{v:'0',id:'p1-score',cls:'c-num'},
+  I5:{v:'P2 단어수',cls:'c-section'},J5:{v:'0',id:'p2-score',cls:'c-num'},
+  K5:{v:'게임시작',id:'start-btn',cls:'c-green c-click c-bold',click:'start'},
+  L5:{v:''},
+
+  // ── ROW 6: 현재 게임 상태 ──
+  B6:{v:'개발팀',cls:'c-section'},C6:{v:'현재단어',cls:'c-section'},
+  D6:{v:'—',id:'cell-curword',cls:'c-bold c-big'},
+  E6:{v:'→ 다음글자',cls:'c-section'},
+  F6:{v:'—',id:'cell-nextchar',cls:'c-bold c-big c-green'},
+  G6:{v:'차례',cls:'c-section'},H6:{v:'—',id:'cell-turn'},
+  I6:{v:'단어입력',cls:'c-section'},
+  J6:{v:'여기 클릭 후 입력',id:'cell-wordinput',cls:'c-input'},
+  K6:{v:'제출',id:'submit-btn',cls:'c-green c-click c-bold',click:'submit'},
+  L6:{v:'',id:'cell-inputmsg'},
+
+  // ── ROW 7: 히스토리 헤더 ──
+  B7:{v:'개발팀'},C7:{v:'No.',cls:'c-header'},D7:{v:'단어',cls:'c-header'},
+  E7:{v:'입력자',cls:'c-header'},F7:{v:'글자수',cls:'c-header'},
+  G7:{v:'첫글자',cls:'c-header'},H7:{v:'끝글자',cls:'c-header'},
+  I7:{v:'입력시각',cls:'c-header'},J7:{v:'비고',cls:'c-header'},
+  K7:{v:'',cls:'c-header'},L7:{v:'채팅',cls:'c-header'},
+
+  // rows 8~33: dynamic (word history)
+
+  // ── ROW 35~40: 합계/요약 ──
+  B35:{v:'합 계',cls:'c-section'},C35:{v:'=SUM(D8:D34)',cls:'c-formula'},
+  D35:{v:'',id:'cell-totalwords',cls:'c-num c-formula'},
+  E35:{v:'평균 글자수'},F35:{v:'',id:'cell-avglen',cls:'c-num c-formula'},
+  G35:{v:'게임시간'},H35:{v:'',id:'cell-gametime'},
+
+  B36:{v:'작성일'},C36:{v:new Date().toLocaleDateString('ko-KR')},
+  D36:{v:'작성자'},E36:{v:'인사팀 김대리'},
+  F36:{v:'보안등급'},G36:{v:'대외비',cls:'c-red'},
+  H36:{v:'결재'},I36:{v:'팀장 □'},J36:{v:'부장 □'},K36:{v:'임원 □'},
+};
+
+// ════════════════════════════════════
+//  BUILD GRID
+// ════════════════════════════════════
+function buildGrid() {
+  const g = document.getElementById('grid');
+  let h = '<thead><tr>';
+  h += `<th class="corner-th"></th>`;
+  for(let c=1;c<COLS.length;c++)
+    h += `<th class="col-header" style="width:${COL_W[c]}px;min-width:${COL_W[c]}px">${COLS[c]}</th>`;
+  h += '</tr></thead><tbody>';
+
+  for(let r=1;r<=NROWS;r++) {
+    h += '<tr>';
+    h += `<td class="row-header">${r}</td>`;
+    for(let c=1;c<COLS.length;c++) {
+      const key = COLS[c]+r;
+      const d = DEF[key];
+      if(d) {
+        const cls = 'cell ' + (d.cls||'');
+        const id = d.id ? `id="${d.id}"` : '';
+        const onclick = d.click ? `onclick="cellAct('${d.id||d.click}')"` : (d.edit ? `onclick="focusEdit('${d.id}','${d.edit}')"` : '');
+        h += `<td class="${cls}" ${id} ${onclick} data-k="${key}">${d.v||''}</td>`;
+      } else if(r>=8&&r<=33) {
+        const ri = r-8;
+        if(c===3) h += `<td class="cell c-num" id="h${ri}-n" data-k="${key}"></td>`;
+        else if(c===4) h += `<td class="cell c-bold" id="h${ri}-w" data-k="${key}"></td>`;
+        else if(c===5) h += `<td class="cell" id="h${ri}-p" data-k="${key}"></td>`;
+        else if(c===6) h += `<td class="cell c-num" id="h${ri}-l" data-k="${key}"></td>`;
+        else if(c===7) h += `<td class="cell" id="h${ri}-f" data-k="${key}"></td>`;
+        else if(c===8) h += `<td class="cell" id="h${ri}-e" data-k="${key}"></td>`;
+        else if(c===9) h += `<td class="cell" id="h${ri}-t" data-k="${key}"></td>`;
+        else if(c===10) h += `<td class="cell c-green" id="h${ri}-v" data-k="${key}"></td>`;
+        else if(c===12) h += `<td class="cell" id="h${ri}-c" data-k="${key}"></td>`;
+        else h += `<td class="cell" data-k="${key}"></td>`;
+      } else {
+        h += `<td class="cell" data-k="${key}"></td>`;
+      }
+    }
+    h += '</tr>';
+  }
+  h += '</tbody>';
+  g.innerHTML = h;
+
+  g.addEventListener('click', e => {
+    const td = e.target.closest('td[data-k]');
+    if(!td) return;
+    // deselect previous
+    document.querySelectorAll('.cell.selected').forEach(x => x.classList.remove('selected'));
+    td.classList.add('selected');
+    document.getElementById('cell-ref').textContent = td.getAttribute('data-k');
+    const d = DEF[td.getAttribute('data-k')];
+    const fb = document.getElementById('formula-bar-input');
+    if(d?.v?.startsWith('=')) fb.value = d.v;
+    else fb.value = td.textContent;
+    document.getElementById('sb-mode').textContent = '셀 모드: ' + td.getAttribute('data-k');
+  });
+}
+
+// ════════════════════════════════════
+//  EDITABLE FIELDS
+// ════════════════════════════════════
+let vals = { nick:'', code:'', word:'' };
+let editField = null;
+
+function focusEdit(id, field) {
+  editField = field;
+  const ri = document.getElementById('real-input');
+  ri.value = vals[field] || '';
+  ri.style.pointerEvents = 'auto';
+  ri.focus();
+  const el = document.getElementById(id);
+  if(el) {
+    document.querySelectorAll('.cell.selected').forEach(x=>x.classList.remove('selected'));
+    el.classList.add('selected');
+    document.getElementById('cell-ref').textContent = el.getAttribute('data-k') || id;
+    document.getElementById('formula-bar-input').value = vals[field] || '';
+    document.getElementById('sb-mode').textContent = '셀 모드: 편집';
+  }
+}
+
+document.getElementById('formula-bar-input').addEventListener('focus', function() {
+  if(editField==='word') this.removeAttribute('readonly');
+});
+document.getElementById('formula-bar-input').addEventListener('input', function() {
+  if(editField) {
+    vals[editField] = this.value;
+    syncFieldDisplay(editField);
+  }
+});
+
+document.getElementById('real-input').addEventListener('input', function() {
+  if(!editField) return;
+  const v = editField==='code' ? this.value.toUpperCase() : this.value;
+  vals[editField] = v;
+  document.getElementById('formula-bar-input').value = v;
+  syncFieldDisplay(editField);
+});
+document.getElementById('real-input').addEventListener('keydown', function(e) {
+  if(e.key==='Enter') {
+    if(editField==='word') { submitWord(); return; }
+    editField = null;
+  }
+  if(e.key==='Escape') editField = null;
+});
+
+function syncFieldDisplay(f) {
+  if(f==='nick') { const el=document.getElementById('inp-nick'); if(el) el.textContent=vals.nick||''; }
+  if(f==='code') { const el=document.getElementById('inp-code'); if(el) el.textContent=vals.code||''; }
+  if(f==='word') {
+    const el=document.getElementById('cell-wordinput');
+    if(el) el.textContent=vals.word||'여기 클릭 후 입력';
+  }
+}
+
+// ════════════════════════════════════
+//  CELL ACTIONS
+// ════════════════════════════════════
+function cellAct(id) {
+  if(id==='btn-create'||id==='create') createRoom();
+  else if(id==='btn-join'||id==='join') joinRoom();
+  else if(id==='start-btn'||id==='start') startGame();
+  else if(id==='submit-btn'||id==='submit') submitWord();
+}
+
+// ════════════════════════════════════
+//  UTILS
+// ════════════════════════════════════
+function genCode() { return Math.random().toString(36).substr(2,6).toUpperCase(); }
+
+function sc(id, v, cls) {
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.textContent = v;
+  if(cls) {
+    el.className = el.className
+      .replace(/\b(c-green|c-yellow|c-red|c-blue)\b/g,'').trim() + ' ' + cls;
+  }
+}
+
+function flashErr(msg) {
+  const el = document.getElementById('cell-wordinput');
+  if(el) { el.classList.add('err-flash'); setTimeout(()=>el.classList.remove('err-flash'),350); }
+  sc('cell-inputmsg', '⚠ '+msg, 'c-red');
+  setTimeout(()=>sc('cell-inputmsg',''),2500);
+}
+
+function addChatRow(name, msg) {
+  for(let i=0;i<26;i++) {
+    const el=document.getElementById('h'+i+'-c');
+    if(el && el.textContent==='') { el.textContent='['+name+'] '+msg; return; }
+  }
+  // scroll up
+  for(let i=0;i<25;i++) {
+    const a=document.getElementById('h'+i+'-c');
+    const b=document.getElementById('h'+(i+1)+'-c');
+    if(a&&b) a.textContent=b.textContent;
+  }
+  const last=document.getElementById('h25-c');
+  if(last) last.textContent='['+name+'] '+msg;
+}
+
+// ════════════════════════════════════
+//  GAME
+// ════════════════════════════════════
+function getNick() {
+  if(!vals.nick.trim()) { flashErr('D4 셀에 닉네임 입력 후 시도하세요'); return null; }
+  return vals.nick.trim();
+}
+
+async function createRoom() {
+  myNickname = getNick(); if(!myNickname) return;
+  if(!db) { demoMode(); return; }
+  roomCode=genCode(); isHost=true; playerKey='p1';
+  await db.ref('rooms/'+roomCode).set({
+    status:'waiting', p1:{id:myId,name:myNickname,score:0}, p2:null, game:null, chat:null
+  });
+  sc('cell-roomshow', roomCode);
+  sc('cell-status','대기중 — 코드: '+roomCode,'c-yellow');
+  sc('p1-name', myNickname,'c-green');
+  document.title='['+roomCode+'] 2025_Q2_업무보고.xlsx — Microsoft Excel';
+  setupListeners();
+  addChatRow('시스템','방 생성: '+roomCode+' | F4셀에 코드 입력 후 [참가하기] 클릭 안내');
+}
+
+async function joinRoom() {
+  myNickname = getNick(); if(!myNickname) return;
+  const code = vals.code.trim().toUpperCase();
+  if(!code||code.length!==6){flashErr('F4 셀에 6자리 방 코드 입력');return;}
+  if(!db){flashErr('Firebase 설정이 필요합니다');return;}
+  const snap=await db.ref('rooms/'+code).get();
+  if(!snap.exists()){flashErr('방 코드가 존재하지 않습니다');return;}
+  const room=snap.val();
+  if(room.p2){flashErr('방이 가득 찼습니다');return;}
+  roomCode=code; isHost=false; playerKey='p2';
+  await db.ref('rooms/'+roomCode+'/p2').set({id:myId,name:myNickname,score:0});
+  await db.ref('rooms/'+roomCode+'/status').set('ready');
+  sc('cell-status','참가완료','c-green');
+  sc('p2-name',myNickname,'c-green');
+  document.title='['+roomCode+'] 2025_Q2_업무보고.xlsx — Microsoft Excel';
+  setupListeners();
+  addChatRow('시스템','방 ['+roomCode+'] 참가 완료');
+}
+
+function setupListeners() {
+  roomRef=db.ref('rooms/'+roomCode);
+  roomRef.child('p1').on('value',()=>syncPlayers());
+  roomRef.child('p2').on('value',snap=>{
+    const p2=snap.val();
+    if(p2&&isHost){sc('p2-name',p2.name,'c-green');addChatRow('시스템',p2.name+' 님 참가');}
+    syncPlayers();
+  });
+  roomRef.child('game').on('value',snap=>{const g=snap.val();if(!g)return;gameState=g;renderGame(g);});
+  roomRef.child('chat').on('child_added',snap=>{
+    const m=snap.val();if(m.id!==myId)addChatRow(m.name,m.text);
+  });
+}
+
+async function syncPlayers() {
+  if(!roomRef) return;
+  const snap=await roomRef.get(); const room=snap.val();
+  if(room?.p1) sc('p1-name',room.p1.name,'c-green');
+  if(room?.p2) sc('p2-name',room.p2.name,'c-green');
+}
+
+async function startGame() {
+  if(!isHost){flashErr('방장만 시작 가능');return;}
+  const snap=await roomRef.get(); const room=snap.val();
+  if(!room.p2){flashErr('상대방이 아직 참가하지 않았습니다');return;}
+  const fw=['사과','바나나','고양이','강아지','컴퓨터','학교','버스','하늘','바람','나무','기차','도시','사자','호랑이','코끼리'][Math.floor(Math.random()*15)];
+  await roomRef.child('game').set({
+    status:'playing',turn:'p1',currentWord:fw,
+    words:[{word:fw,player:'p1',name:room.p1.name,ts:Date.now()}],
+    usedWords:{[fw]:true},turnStart:Date.now(),p1Score:0,p2Score:0
+  });
+  await roomRef.child('status').set('playing');
+}
+
+function renderGame(g) {
+  if(g.status==='ended'){endGame(g);return;}
+  const lw=g.currentWord, lc=lw[lw.length-1], mine=g.turn===playerKey;
+  sc('cell-curword',lw,'c-bold c-big');
+  sc('cell-nextchar',lc+' →','c-bold c-big c-green');
+  sc('cell-turn',mine?'★ 내 차례':'상대 차례',mine?'c-green':'c-yellow');
+  sc('cell-status','진행중','c-green');
+  sc('start-btn','진행중','c-green');
+
+  const wi=document.getElementById('cell-wordinput');
+  if(wi){
+    wi.textContent=mine?(vals.word||lc+'... 입력'):'상대방 입력 중...';
+    wi.style.color=mine?'#1d6832':'#999';
+    wi.style.cursor=mine?'text':'default';
+  }
+  sc('cell-inputmsg',mine?'← '+lc+'(으)로 시작하는 단어 입력 → Enter':'상대방 차례');
+  sc('p1-score',g.p1Score||0);
+  sc('p2-score',g.p2Score||0);
+  document.getElementById('formula-bar-input').value=`=WORDCHAIN(현재단어,"${lc}",차례)`;
+
+  renderHistory(g.words||[]);
+  updateStats(g.words||[]);
+  syncPlayers();
+  startTimer(g.turnStart);
+}
+
+function renderHistory(words) {
+  const n=Math.min(words.length,26);
+  for(let i=0;i<26;i++) {
+    const ri=25-i; // 최신이 위
+    if(i<n) {
+      const w=words[words.length-1-i];
+      const cls=w.player==='p1'?'cell c-blue':'cell c-green';
+      sc('h'+ri+'-n',words.length-i);
+      const we=document.getElementById('h'+ri+'-w');
+      if(we){we.textContent=w.word;we.className=cls+' c-bold';}
+      sc('h'+ri+'-p',w.name);
+      sc('h'+ri+'-l',w.word.length);
+      sc('h'+ri+'-f',w.word[0]);
+      sc('h'+ri+'-e',w.word[w.word.length-1]);
+      sc('h'+ri+'-t',new Date(w.ts).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit',second:'2-digit'}));
+      sc('h'+ri+'-v','✓ 유효');
+    } else {
+      ['n','w','p','l','f','e','t','v'].forEach(f=>{
+        const el=document.getElementById('h'+ri+'-'+f);
+        if(el){el.textContent='';el.className='cell'+(f==='l'?' c-num':'');}
+      });
+    }
+  }
+}
+
+function updateStats(words) {
+  sc('cell-totalwords',words.length);
+  sc('sb-cnt',words.length);
+  sc('sb-sum',words.length);
+  const avg=words.length?Math.round(words.reduce((a,w)=>a+w.word.length,0)/words.length*10)/10:0;
+  sc('cell-avglen',avg);
+}
+
+function startTimer(ts) {
+  clearInterval(timerInterval);
+  timerInterval=setInterval(()=>{
+    const rem=Math.max(0,TIME_LIMIT-(Date.now()-ts)/1000);
+    const bars=Math.round((rem/TIME_LIMIT)*10);
+    sc('cell-timer',Math.ceil(rem)+'s',rem<=10?'c-red':'c-green');
+    sc('cell-timerbar','█'.repeat(bars)+'░'.repeat(10-bars));
+    if(rem<=0&&isHost&&gameState?.status==='playing'){clearInterval(timerInterval);handleTimeout();}
+  },300);
+}
+
+async function handleTimeout() {
+  const snap=await roomRef.get(); const room=snap.val();
+  const loser=gameState.turn, wk=loser==='p1'?'p2':'p1';
+  await roomRef.child('game').update({
+    status:'ended',winner:wk,winnerName:room[wk]?.name,
+    reason:(loser==='p1'?room.p1?.name:room.p2?.name)+' 시간초과',
+    endWords:gameState.words?.length||0
+  });
+}
+
+async function submitWord() {
+  if(!gameState||gameState.turn!==playerKey){flashErr('내 차례가 아닙니다');return;}
+  const word=vals.word.trim();
+  if(!word){flashErr('J6 셀에 단어를 입력하세요');return;}
+  const req=gameState.currentWord[gameState.currentWord.length-1];
+  if(word[0]!==req){flashErr('"'+req+'"(으)로 시작해야 합니다');return;}
+  if(word.length<2){flashErr('2글자 이상 입력하세요');return;}
+  if(gameState.usedWords?.[word]){flashErr('이미 사용된 단어입니다');return;}
+
+  const snap=await roomRef.get(); const room=snap.val();
+  const words=[...(gameState.words||[]),{word,player:playerKey,name:room[playerKey].name,ts:Date.now()}];
+  const uw={...(gameState.usedWords||{}),[word]:true};
+  const nt=playerKey==='p1'?'p2':'p1';
+  const sk=playerKey+'Score';
+  vals.word='';
+  syncFieldDisplay('word');
+  await roomRef.child('game').update({
+    turn:nt,currentWord:word,words,usedWords:uw,
+    [sk]:(gameState[sk]||0)+1,turnStart:Date.now()
+  });
+}
+
+function endGame(g) {
+  clearInterval(timerInterval);
+  const win=g.winner===playerKey;
+  sc('cell-status',win?'🎉 승리!':'패배 :(', win?'c-green':'c-red');
+  sc('cell-turn',g.reason||'게임종료','c-yellow');
+  sc('cell-curword',win?'WIN 🏆':'LOSE');
+  sc('cell-nextchar','G4[방만들기] 클릭시 재시작','c-yellow');
+  sc('start-btn','재시작',win?'c-green':'c-yellow');
+  document.getElementById('formula-bar-input').value=`=IF(승자="${g.winnerName}","축하합니다! 🎉","아쉽네요 :(")`;
+  renderHistory(g.words||[]);
+  updateStats(g.words||[]);
+  addChatRow('결과',(win?'승리':'패배')+'ㅣ'+g.reason);
+}
+
+// ════════════════════════════════════
+//  DEMO MODE
+// ════════════════════════════════════
+const DEMO_MAP={
+  '사':'사자','자':'자동차','차':'차이','이':'이상','상':'상자','가':'가방','방':'방학',
+  '학':'학교','교':'교실','실':'실력','나':'나무','무':'무지개','개':'개나리','리':'리본',
+  '본':'본부','부':'부산','산':'산책','책':'책상','점':'점수','수':'수박','박':'박수',
+  '영':'영화','화':'화분','분':'분수','관':'관람','보':'보물','트':'트럭','기':'기차',
+  '어':'어머니','니':'니트','비':'비행기','통':'통닭','음':'음악','악':'악어',
+  '원':'원숭이','인':'인삼','삼':'삼각형','형':'형광등','등':'등산','목':'목도리',
+  '도':'도마뱀','장':'장미','미':'미래','래':'래퍼','퍼':'퍼즐','줄':'줄넘기',
+};
+
+function demoMode() {
+  roomCode=genCode(); playerKey='p1'; isHost=true;
+  myNickname=vals.nick||'플레이어';
+  sc('cell-roomshow',roomCode+' (데모)');
+  sc('cell-status','데모모드 — AI 대전','c-blue');
+  sc('p1-name',myNickname,'c-green');
+  sc('p2-name','AI 상대','c-green');
+  addChatRow('시스템','Firebase 미설정 → 데모 AI 모드 시작');
+  const fw=['사과','바나나','고양이','강아지','컴퓨터','학교','기차'][Math.floor(Math.random()*7)];
+  gameState={
+    status:'playing',turn:'p1',currentWord:fw,
+    words:[{word:fw,player:'p2',name:'AI',ts:Date.now()}],
+    usedWords:{[fw]:true},turnStart:Date.now(),p1Score:0,p2Score:0
+  };
+  renderGame(gameState);
+  addChatRow('AI','첫 단어: '+fw);
+}
+
+const _origSubmit = submitWord;
+submitWord = async function() {
+  if(db){await _origSubmit();return;}
+  if(!gameState||gameState.turn!=='p1'){flashErr('내 차례가 아닙니다');return;}
+  const word=vals.word.trim();
+  if(!word){flashErr('J6 셀에 단어 입력');return;}
+  const req=gameState.currentWord[gameState.currentWord.length-1];
+  if(word[0]!==req){flashErr('"'+req+'"(으)로 시작해야 합니다');return;}
+  if(word.length<2){flashErr('2글자 이상');return;}
+  if(gameState.usedWords?.[word]){flashErr('이미 사용된 단어');return;}
+
+  vals.word=''; syncFieldDisplay('word');
+  gameState.words.push({word,player:'p1',name:myNickname,ts:Date.now()});
+  gameState.usedWords[word]=true;
+  gameState.currentWord=word; gameState.turn='p2';
+  gameState.p1Score++; gameState.turnStart=Date.now();
+  renderGame(gameState);
+
+  setTimeout(()=>{
+    if(!gameState||gameState.status==='ended') return;
+    const lc=gameState.currentWord[gameState.currentWord.length-1];
+    const aw=DEMO_MAP[lc];
+    if(!aw||gameState.usedWords[aw]){
+      gameState.status='ended';gameState.winner='p1';
+      gameState.winnerName=myNickname;gameState.reason='AI 응수 불가';
+      endGame(gameState);return;
+    }
+    gameState.words.push({word:aw,player:'p2',name:'AI',ts:Date.now()});
+    gameState.usedWords[aw]=true;
+    gameState.currentWord=aw;gameState.turn='p1';
+    gameState.p2Score++;gameState.turnStart=Date.now();
+    renderGame(gameState);
+    addChatRow('AI','"'+aw+'"');
+  },1000+Math.random()*800);
+}
+
+// ════════════════════════════════════
+//  INIT
+// ════════════════════════════════════
+buildGrid();
+
+// word input cell click
+document.addEventListener('click', e => {
+  const el=e.target.closest('#cell-wordinput');
+  if(el && gameState?.turn===playerKey) focusEdit('cell-wordinput','word');
+});
+
+// keyboard shortcuts
+document.addEventListener('keydown', e => {
+  if(e.key==='Enter'&&editField==='word') submitWord();
+  if(e.key==='Escape') editField=null;
+});
+
+// select D4 on load
+setTimeout(()=>{
+  const c=document.querySelector('td[data-k="D4"]');
+  if(c){c.classList.add('selected');document.getElementById('cell-ref').textContent='D4';}
+},100);
+</script>
+</body>
+</html>
